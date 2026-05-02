@@ -1,0 +1,5 @@
+service:
+  sub-service:
+    name: overlay-name
+  hosts:
+    - x

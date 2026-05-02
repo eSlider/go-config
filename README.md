@@ -1,97 +1,128 @@
-# go-env
+# go-config
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/eslider/go-env.svg)](https://pkg.go.dev/github.com/eslider/go-env)
+[![Go Reference](https://pkg.go.dev/badge/github.com/eslider/go-config.svg)](https://pkg.go.dev/github.com/eslider/go-config)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Latest Release](https://img.shields.io/github/v/release/eSlider/go-config)](https://github.com/eSlider/go-config/releases/latest)
+[![GitHub Stars](https://img.shields.io/github/stars/eSlider/go-config?style=social)](https://github.com/eSlider/go-config/stargazers)
 
-Tiny, zero-ceremony library for decoding process environment variables into
-Go structs.
+Convert **env**, **YAML**, **JSON**, and **INI** to and from Go `map[string]any` and structs. Multi-source inputs merge with **deep map merge**: nested maps combine, **scalar leaves are last-write-wins**, and **slices** default to **replace** (opt-in **concat** via `WithSliceMerge`). Keys are normalized with a configurable **lower+alnum** rule so `sub-service`, `SUB_SERVICE`, and `SubService` line up across formats. Built on [go-viper/mapstructure/v2](https://github.com/go-viper/mapstructure).
 
-- Uses `_` as a path separator: `SERVICE_HTTP_PORT` → `Service.HTTP.Port`.
-- Weakly-typed by default (`"1"` → `int`, `"true"` → `bool`).
-- Optional prefix filter with automatic stripping.
-- Pluggable decode hooks via [`mitchellh/mapstructure`][mapstructure].
+## Architecture
+
+```mermaid
+flowchart LR
+  Sources["Sources\nbytes reader file URL process env"]
+  Parser["Parser\ngodotenv yaml ini json"]
+  Norm["keymap.Walk\nNormalizer"]
+  MergeOp["merge.DeepMerge"]
+  Map["map string any"]
+  MS["structconv\nmapstructure v2"]
+  Struct["Go struct"]
+  Sources --> Parser --> Norm --> MergeOp --> Map
+  Map -->|Unmarshal| MS --> Struct
+  Struct -->|Marshal| MS --> Map
+  Map -->|WriteTo Marshal| Parser
+```
+
+## Hero example
+
+```go
+yamlCfg := yaml.New(yaml.WithURL("https://raw.githubusercontent.com/eSlider/mail-archive/refs/heads/master/docker-compose.yml"))
+envCfg := env.New(
+	env.WithFile(".default.env"), // lowest priority
+	env.WithFile(".env"),
+	env.WithCurrentEnvironment(), // highest priority — process env wins
+)
+
+var svc MyService
+_ = yamlCfg.Unmarshal(&svc)
+_ = envCfg.Unmarshal(&svc) // later sources override earlier scalar leaves; maps recurse
+```
+
+- **Maps** merge recursively (sub-trees are combined, not replaced wholesale).
+- **Scalar leaves**: last-write-wins when you list sources lowest → highest priority.
+- **Slices**: `merge.Replace` by default; use `WithSliceMerge(merge.Concat)` to append.
+
+Runnable offline variant: see `Example_hero_offline` in [example_hero_test.go](example_hero_test.go).
 
 ## Install
 
 ```sh
-go get github.com/eslider/go-env
+go get github.com/eslider/go-config
+go install github.com/eslider/go-config/cmd/envc@latest
 ```
 
 ## Quick start
 
+### 1. Single YAML file
+
 ```go
-package main
+c := yaml.New(yaml.WithFile("config.yaml"))
+var cfg AppConfig
+if err := c.Unmarshal(&cfg); err != nil { /* ... */ }
+```
 
-import (
-	"fmt"
+### 2. JSON over HTTPS with a header
 
-	"github.com/eslider/go-env"
+```go
+c := json.New(
+	json.WithURL("https://api.example.com/v1/config.json"),
+	json.WithHTTPHeader("Authorization", "Bearer "+token),
 )
-
-type Config struct {
-	Service struct {
-		HTTP struct {
-			Port int
-		}
-		Key string
-	}
-}
-
-func main() {
-	var cfg Config
-	if err := env.Unmarshal(&cfg); err != nil {
-		panic(err)
-	}
-	fmt.Printf("%+v\n", cfg)
-}
+var cfg AppConfig
+_ = c.Unmarshal(&cfg)
 ```
 
-With a prefix:
+### 3. Cross-format conversion (YAML → JSON)
 
 ```go
-// Only looks at APP_* variables; strips the APP_ prefix before decoding.
-_ = env.UnmarshalPrefix(&cfg, "APP_")
+ctx := context.Background()
+m, _ := yaml.New(yaml.WithFile("in.yaml")).Map(ctx)
+b, _ := json.New().Marshal(m)
+os.WriteFile("out.json", b, 0o644)
 ```
 
-## API
+## CLI: `envc`
 
-| Function | Purpose |
-|---|---|
-| `Unmarshal(dst, opts...)` | Decode all env vars into `dst`. |
-| `UnmarshalPrefix(dst, prefix, opts...)` | Same, but only vars starting with `prefix`. |
-| `AsMap()` / `AsMapPrefix(prefix)` | Return the nested `map[string]any` used by the decoder (debugging, custom decoders). |
+| Command | Purpose |
+| --- | --- |
+| `envc convert --from yaml --to env --input - --output -` | Convert stdin YAML to dotenv on stdout |
+| `envc get --from yaml --path service.name config.yaml` | Print one path (dot-separated; segments normalized like codecs) |
+| `envc merge --from yaml --to json --output out.json a.yaml b.yaml` | Deep-merge multiple YAML files, emit JSON |
 
-### Options
+## API (all codecs)
 
-| Option | Default | Purpose |
-|---|---|---|
-| `WithTrim(bool)` | `true` | TrimSpace every string value. |
-| `WithWeaklyTyped(bool)` | `true` | `mapstructure`'s weakly-typed coercion. |
-| `WithTagName(string)` | `"mapstructure"` | Struct tag name for field overrides. |
-| `WithDecodeHook(h)` | — | Append a `mapstructure.DecodeHookFunc` to the chain. |
+| Method | Description |
+| --- | --- |
+| `New(opts...)` | Construct codec |
+| `Map(ctx)` | Merged `map[string]any` |
+| `Unmarshal(dst)` / `UnmarshalContext(ctx, dst)` | Decode into struct (or map) |
+| `Marshal(src)` / `WriteTo(w, src)` | Encode struct or `map[string]any` |
 
-## Semantics
+Shared options (each subpackage): `WithBytes`, `WithReader`, `WithFile`, `WithURL`, `WithHTTPHeader`, `WithHTTPClient`, `WithKeyNormalizer`, `WithSliceMerge`, `WithTrim`, `WithWeaklyTyped`, `WithTagName`, `WithDecodeHook`.
 
-- **Path collisions**: first write wins. If both `FOO=1` and `FOO=2` exist
-  in the environ, only `FOO=1` is kept. This matches the original
-  `ai-fabric/pkg/env` behaviour.
-- **Case-insensitive keys**: all path components are lower-cased; struct
-  fields are matched via `mapstructure` which is also case-insensitive.
-- **`_`-only delimiter**: there's no escape — if a variable legitimately
-  contains `_` inside a "leaf" name, you must restructure your struct to
-  match the nested layout.
+`env` adds: `WithCurrentEnvironment`, `WithPrefix`.
 
-## Status
+## Cross-format mapping
 
-Extracted from `produktor.io/ai-fabric` as part of the eSlider `go-*`
-library standard (ASR-0008). Merges the best parts of three previously
-divergent copies:
+| Go | YAML | ENV |
+| --- | --- | --- |
+| `Service.SubService.Name` | `service.sub-service.name` | `SERVICE_SUBSERVICE_NAME` |
 
-- `produktor.io/ai-fabric/pkg/env`
-- `markets-platform/TP-general-code/pkg/system/env.go`
-- the various `pkg/system/env.go` snapshots inside `var/agents/issue-*/`
+INI uses dotted sections, e.g. `[service.subservice]` with `name=...`.
+
+## Related libraries
+
+| Module | Role |
+| --- | --- |
+| [go-matrix-bot](https://github.com/eSlider/go-matrix-bot) | Matrix bots |
+| [go-onlyoffice](https://github.com/eSlider/go-onlyoffice) | OnlyOffice API |
+| [go-ollama](https://github.com/eSlider/go-ollama) | Ollama client |
+
+## Decisions
+
+Repo-local ASRs: [docs/asr/README.md](docs/asr/README.md).
 
 ## License
 
 MIT © Andriy Oblivantsev
-
-[mapstructure]: https://github.com/mitchellh/mapstructure

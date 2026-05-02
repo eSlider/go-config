@@ -1,14 +1,37 @@
 # Changelog
 
-All notable changes to `go-env` are documented here.
+All notable changes to `go-config` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-02
+
+### Added
+
+- Module rename to `github.com/eslider/go-config` with subpackages `env`, `yaml`, `json`, `ini`.
+- Uniform `Codec` API: `New`, `Map`, `Unmarshal`, `UnmarshalContext`, `Marshal`, `WriteTo`.
+- `internal/source` for bytes, readers, files, and HTTP(S) URLs with optional headers and custom `http.Client`.
+- `internal/keymap` recursive key walk with default `LowerAlnum` normalizer.
+- `internal/merge` deep merge: recursive maps, last-write-wins scalars, configurable slice replace vs concat.
+- `internal/structconv` around `github.com/go-viper/mapstructure/v2`.
+- CLI `envc` (`cmd/envc`): `convert`, `get`, `merge`.
+- Fixtures under `fixtures/` for identity, merge, edge, and invalid parser cases.
+- `testfixtures` helper for tests.
+- Repo-local ASRs in `docs/asr/`.
+
+### Changed
+
+- **Breaking:** the v0.1.0 `github.com/eslider/go-env` API (`Unmarshal`, `UnmarshalPrefix`, `AsMap`, …) is not re-exported; use `env.New(...).Unmarshal(...)`.
+
+### Dependencies
+
+- `github.com/go-viper/mapstructure/v2`, `github.com/joho/godotenv`, `gopkg.in/yaml.v3`, `gopkg.in/ini.v1`.
+
 ## [0.1.0] - 2026-04-24
 
-Initial release. Extracted from `produktor.io/ai-fabric/pkg/env` per
+Initial release as `github.com/eslider/go-env`. Extracted from `produktor.io/ai-fabric/pkg/env` per
 `inventar/docs/asr/ASR-0008-ai-fabric-audit.md`.
 
 ### Added

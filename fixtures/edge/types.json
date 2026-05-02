@@ -1,0 +1,7 @@
+{
+  "flag": true,
+  "count": 42,
+  "ratio": 3.14,
+  "nothing": null,
+  "nested": [1, 2]
+}

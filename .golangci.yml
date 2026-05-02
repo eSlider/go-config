@@ -1,13 +1,17 @@
+version: "2"
+
 run:
   timeout: 5m
   tests: true
 
-linters:
-  disable-all: true
+formatters:
   enable:
-    - errcheck
     - gofmt
     - goimports
+
+linters:
+  enable:
+    - errcheck
     - govet
     - ineffassign
     - revive
