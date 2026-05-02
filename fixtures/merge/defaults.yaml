@@ -1,0 +1,13 @@
+service:
+  name: default-name
+  sub-service:
+    name: default-sub
+    key: default-key
+    timeout: 1
+    enabled: false
+  hosts:
+    - a
+    - b
+  database:
+    url: postgres://old
+    pool-size: 1

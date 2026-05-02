@@ -1,0 +1,14 @@
+service:
+  name: default-name
+  sub-service:
+    name: overlay-name
+    key: default-key
+    timeout: 1
+    enabled: false
+  hosts:
+    - a
+    - b
+    - x
+  database:
+    url: postgres://old
+    pool-size: 1

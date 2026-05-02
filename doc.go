@@ -1,28 +1,23 @@
-// Package env reads process environment variables and decodes them into
-// Go structs using underscore-delimited paths.
+// Package config is the module root for go-config (import path
+// github.com/eslider/go-config). Use the subpackages [env], [yaml], [json], and
+// [ini] for format-specific codecs and the [cmd/envc] command for CLI
+// conversion.
 //
-// A variable named "SERVICE_HTTP_PORT" becomes the path Service.HTTP.Port
-// (case-insensitive, '_' is a path separator). Values are decoded via
-// github.com/mitchellh/mapstructure, so numeric, boolean and slice
-// conversions happen automatically.
+// Hero workflow (YAML + layered dotenv + process env):
 //
-//	var cfg struct {
-//		Service struct {
-//			HTTP struct {
-//				Port int
-//			}
-//			Key string
-//		}
-//	}
-//	if err := env.Unmarshal(&cfg); err != nil { ... }
+//	yamlCfg := yaml.New(yaml.WithURL("https://example.com/config.yaml"))
+//	envCfg := env.New(
+//	    env.WithFile(".default.env"),
+//	    env.WithFile(".env"),
+//	    env.WithCurrentEnvironment(),
+//	)
+//	var svc MyService
+//	_ = yamlCfg.Unmarshal(&svc)
+//	_ = envCfg.Unmarshal(&svc)
 //
-// UnmarshalPrefix ignores variables that don't start with the given
-// prefix and strips it before building the path:
-//
-//	_ = os.Setenv("APP_DB_HOST", "localhost")
-//	_ = env.UnmarshalPrefix(&cfg, "APP_")
-//	// cfg.Db.Host == "localhost"
-//
-// String values are TrimSpace-trimmed by default; pass WithTrim(false) to
-// opt out.
-package env
+// [cmd/envc]: https://pkg.go.dev/github.com/eslider/go-config/cmd/envc
+// [env]: https://pkg.go.dev/github.com/eslider/go-config/env
+// [yaml]: https://pkg.go.dev/github.com/eslider/go-config/yaml
+// [json]: https://pkg.go.dev/github.com/eslider/go-config/json
+// [ini]: https://pkg.go.dev/github.com/eslider/go-config/ini
+package config

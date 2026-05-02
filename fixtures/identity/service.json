@@ -1,0 +1,15 @@
+{
+  "service": {
+    "name": "my-service",
+    "sub-service": {
+      "name": "abc",
+      "key": "abs",
+      "timeout": 30,
+      "enabled": true
+    },
+    "database": {
+      "url": "postgres://localhost:5432/db",
+      "pool-size": 10
+    }
+  }
+}
