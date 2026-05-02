@@ -10,7 +10,7 @@ Convert **env**, **YAML**, **JSON**, and **INI** to and from Go `map[string]any`
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
   Sources["Sources\nbytes reader file URL process env"]
   Parser["Parser\ngodotenv yaml ini json"]
   Norm["keymap.Walk\nNormalizer"]
@@ -84,20 +84,20 @@ os.WriteFile("out.json", b, 0o644)
 
 ## CLI: `envc`
 
-| Command | Purpose |
-| --- | --- |
-| `envc convert --from yaml --to env --input - --output -` | Convert stdin YAML to dotenv on stdout |
-| `envc get --from yaml --path service.name config.yaml` | Print one path (dot-separated; segments normalized like codecs) |
-| `envc merge --from yaml --to json --output out.json a.yaml b.yaml` | Deep-merge multiple YAML files, emit JSON |
+| Command                                                            | Purpose                                                         |
+| ------------------------------------------------------------------ | --------------------------------------------------------------- |
+| `envc convert --from yaml --to env --input - --output -`           | Convert stdin YAML to dotenv on stdout                          |
+| `envc get --from yaml --path service.name config.yaml`             | Print one path (dot-separated; segments normalized like codecs) |
+| `envc merge --from yaml --to json --output out.json a.yaml b.yaml` | Deep-merge multiple YAML files, emit JSON                       |
 
 ## API (all codecs)
 
-| Method | Description |
-| --- | --- |
-| `New(opts...)` | Construct codec |
-| `Map(ctx)` | Merged `map[string]any` |
-| `Unmarshal(dst)` / `UnmarshalContext(ctx, dst)` | Decode into struct (or map) |
-| `Marshal(src)` / `WriteTo(w, src)` | Encode struct or `map[string]any` |
+| Method                                          | Description                       |
+| ----------------------------------------------- | --------------------------------- |
+| `New(opts...)`                                  | Construct codec                   |
+| `Map(ctx)`                                      | Merged `map[string]any`           |
+| `Unmarshal(dst)` / `UnmarshalContext(ctx, dst)` | Decode into struct (or map)       |
+| `Marshal(src)` / `WriteTo(w, src)`              | Encode struct or `map[string]any` |
 
 Shared options (each subpackage): `WithBytes`, `WithReader`, `WithFile`, `WithURL`, `WithHTTPHeader`, `WithHTTPClient`, `WithKeyNormalizer`, `WithSliceMerge`, `WithTrim`, `WithWeaklyTyped`, `WithTagName`, `WithDecodeHook`.
 
@@ -105,19 +105,19 @@ Shared options (each subpackage): `WithBytes`, `WithReader`, `WithFile`, `WithUR
 
 ## Cross-format mapping
 
-| Go | YAML | ENV |
-| --- | --- | --- |
+| Go                        | YAML                       | ENV                       |
+| ------------------------- | -------------------------- | ------------------------- |
 | `Service.SubService.Name` | `service.sub-service.name` | `SERVICE_SUBSERVICE_NAME` |
 
 INI uses dotted sections, e.g. `[service.subservice]` with `name=...`.
 
 ## Related libraries
 
-| Module | Role |
-| --- | --- |
-| [go-matrix-bot](https://github.com/eSlider/go-matrix-bot) | Matrix bots |
+| Module                                                    | Role           |
+| --------------------------------------------------------- | -------------- |
+| [go-matrix-bot](https://github.com/eSlider/go-matrix-bot) | Matrix bots    |
 | [go-onlyoffice](https://github.com/eSlider/go-onlyoffice) | OnlyOffice API |
-| [go-ollama](https://github.com/eSlider/go-ollama) | Ollama client |
+| [go-ollama](https://github.com/eSlider/go-ollama)         | Ollama client  |
 
 ## Decisions
 
