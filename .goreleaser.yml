@@ -25,11 +25,21 @@ builds:
         goarch: arm64
     flags:
       - -trimpath
+      - -buildvcs=false
     ldflags:
-      - -s -w
+      - -s -w -buildid=
       - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+
+# Linux only: UPX shrinks ELF; skip darwin/windows (signing / compatibility).
+# See https://goreleaser.com/customization/builds/upx/
+upx:
+  - enabled: true
+    ids: [envc]
+    goos: [linux]
+    compress: best
+    lzma: true
 
 archives:
   - id: envc

@@ -22,6 +22,12 @@ jobs:
           go-version: stable
           cache: true
 
+      - name: Install UPX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx-ucl
+          upx --version
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
