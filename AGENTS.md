@@ -28,15 +28,24 @@ Architecture Significant Requirements: [docs/asr/README.md](docs/asr/README.md).
 
 ## Checklist before release
 
+Local sanity check (CI runs the same on every PR):
+
 ```sh
-cd go-config
 go mod tidy
 go vet ./...
-go test -race -count=1 ./...
+go test -race -shuffle=on -count=1 ./...
 golangci-lint run --timeout 5m
 ```
 
-Bump `CHANGELOG.md`, tag `vX.Y.Z`, push.
+Versioning is **automated via [release-please](https://github.com/googleapis/release-please-action)**
+and [GoReleaser](https://goreleaser.com) — do **not** hand-edit version strings or tag manually:
+
+1. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
+   (`feat:`, `fix:`, `feat!:` for breaking, etc.).
+2. `.github/workflows/release-please.yml` opens a release PR on each push to `main`
+   with the computed next SemVer and an updated `CHANGELOG.md`.
+3. Merging that PR creates the `vX.Y.Z` tag. `.github/workflows/release.yml` then runs
+   GoReleaser to publish cross-platform `envc` binaries and a GitHub Release.
 
 ## Related
 

@@ -12,3 +12,4 @@ Repo-local decisions for `go-config` (numbering starts at ASR-0001). Org-wide po
 | [ASR-0006](ASR-0006-third-party-library-choices.md) | Third-party library choices |
 | [ASR-0007](ASR-0007-cli-envc-convert-get-merge.md) | CLI `envc`: convert, get, merge |
 | [ASR-0008](ASR-0008-github-presentation-and-release-flow.md) | GitHub presentation and release flow |
+| [ASR-0009](ASR-0009-ci-cd-and-automated-semver.md) | CI/CD pipeline and automated semantic versioning |
