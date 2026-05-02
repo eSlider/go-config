@@ -7,7 +7,7 @@ import (
 
 	"github.com/eslider/go-config/internal/keymap"
 	"github.com/eslider/go-config/internal/merge"
-	"github.com/eslider/go-config/testfixtures"
+	"github.com/eslider/go-config/internal/testfixtures"
 	yaml3 "gopkg.in/yaml.v3"
 )
 

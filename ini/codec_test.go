@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/eslider/go-config/testfixtures"
+	"github.com/eslider/go-config/internal/testfixtures"
 )
 
 func TestCodec_IdentityINIFixture(t *testing.T) {
