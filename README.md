@@ -87,11 +87,99 @@ os.WriteFile("out.json", b, 0o644)
 
 ## CLI: `envc`
 
+Formats for `--from` / `--to`: `yaml`, `json`, `ini`, `env`. Run `envc help` or
+`envc <command> -h` for flags.
+
 | Command                                                            | Purpose                                                         |
 | ------------------------------------------------------------------ | --------------------------------------------------------------- |
 | `envc convert --from yaml --to env --input - --output -`           | Convert stdin YAML to dotenv on stdout                          |
-| `envc get --from yaml --path service.name config.yaml`             | Print one path (dot-separated; segments normalized like codecs) |
+| `envc get --from yaml --path service.name config.yaml`             | Print one path (dot segments map to lower+alnum keys)         |
 | `envc merge --from yaml --to json --output out.json a.yaml b.yaml` | Deep-merge multiple YAML files, emit JSON                       |
+
+### Help and version
+
+```sh
+envc help
+envc version
+```
+
+### `convert` examples
+
+```sh
+# Pipe YAML in, JSON on stdout (default --input - and --output -)
+printf 'app:\n  port: 8080\n' | envc convert --from yaml --to json
+
+# File → file
+envc convert --from json --to yaml --input settings.json --output settings.yaml
+
+# Remote YAML → local dotenv
+envc convert --from yaml --to env \
+  --input https://example.com/config.yaml \
+  --output .env.generated
+```
+
+### Apply YAML or INI to the **current** bash session
+
+`envc convert … --to env` prints **dotenv-style** lines (`KEY=value`). They are normal
+shell assignments, not `export` lines, so use **`set -a`** (allexport) if child processes
+must see the variables. **Process substitution** `<(…)` needs **bash** (not plain `sh`).
+
+```bash
+# YAML → current shell (and export to children while sourcing)
+set -a
+source <(envc convert --from yaml --to env --input config.yaml)
+set +a
+
+# INI → current shell
+set -a
+source <(envc convert --from ini --to env --input app.ini)
+set +a
+```
+
+Same idea from stdin:
+
+```bash
+set -a
+source <(cat deploy.yaml | envc convert --from yaml --to env)
+set +a
+```
+
+Only do this with **trusted** config files (same caution as `source` on any generated
+script): values are expanded by the shell when you `source` them.
+
+### `get` examples
+
+Path segments use the same **lower+alnum** rules as the library (e.g. `sub-service`
+and `SubService` both address `subservice`).
+
+```sh
+# Value from a file
+envc get --from yaml --path app.port config.yaml
+
+# Nested key; stdin when the last argument is `-` or omitted with a pipe
+cat config.yaml | envc get --from yaml --path service.subservice.name -
+```
+
+### `merge` examples
+
+Sources are merged **in order** (later files override scalar leaves; maps recurse).
+Use `-` once to read **one** merged stdin blob as a source (same format as the others).
+
+```sh
+envc merge --from yaml --to json defaults.yaml overrides.yaml
+
+# Write merged JSON to stdout, then save
+envc merge --from yaml --to json base.yaml local.yaml | tee merged.json
+
+# Stdin plus files: first load stdin as YAML, then merge each file
+cat patch.yaml | envc merge --from yaml --to yaml - base.yaml
+```
+
+### Stdin and `-`
+
+With `--input -` (convert) or `-` as the get/merge input, `envc` reads **until EOF**.
+From an interactive terminal with no pipe, that waits until you press **Ctrl-D**
+(end of input). Prefer `--input path` or a URL when scripting.
 
 ## API (all codecs)
 
@@ -122,26 +210,11 @@ INI uses dotted sections, e.g. `[service.subservice]` with `name=...`.
 | [go-onlyoffice](https://github.com/eSlider/go-onlyoffice) | OnlyOffice API |
 | [go-ollama](https://github.com/eSlider/go-ollama)         | Ollama client  |
 
-## Release flow
+## Contributing
 
-Versions are **computed from git history**, never hardcoded in source. Commit with
-[Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `feat!:` …)
-and the pipeline takes care of the rest:
-
-1. Every push / PR runs [`test.yml`](.github/workflows/test.yml) (matrix: Go 1.22, 1.23,
-   stable × linux/macOS/windows, `-race -shuffle=on`) and
-   [`lint.yml`](.github/workflows/lint.yml) (`go vet` + `golangci-lint`).
-2. On merges to `main`, [`release-please.yml`](.github/workflows/release-please.yml)
-   parses commits since the last tag and opens a "release PR" that bumps `CHANGELOG.md`
-   and `.release-please-manifest.json` to the next SemVer.
-3. Merging that PR creates the git tag `vX.Y.Z` and a GitHub Release.
-4. The tag triggers [`release.yml`](.github/workflows/release.yml), which runs
-   [GoReleaser](https://goreleaser.com) to cross-compile `envc` (linux/darwin/windows ×
-   amd64/arm64) with `-X main.version={{.Version}}` injected at link time and attach
-   archives + `checksums.txt` to the release.
-
-No version string lives in Go source — `envc version` prints the value baked in by the
-release build, or `dev` for local `go install` builds.
+Testing expectations, local commands, commit message conventions, and how **release-please**
+and **GoReleaser** publish tags and `envc` binaries are documented in
+**[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ## Decisions
 
