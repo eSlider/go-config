@@ -8,6 +8,18 @@ import (
 	"testing"
 )
 
+func TestRunConvert_TOMLToJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	stdin := strings.NewReader("[app]\nport = 8080\n")
+	code := RunConvert([]string{"--from", "toml", "--to", "json", "--input", "-"}, stdin, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stderr: %s", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"port"`) || !strings.Contains(stdout.String(), "8080") {
+		t.Fatalf("out: %s", stdout.String())
+	}
+}
+
 func TestRunConvert_YAMLToJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("a: 1\n")

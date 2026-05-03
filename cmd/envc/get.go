@@ -16,7 +16,7 @@ import (
 func RunGet(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("get", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	from := fs.String("from", "", "format: yaml|json|ini|env")
+	from := fs.String("from", "", "format: yaml|json|toml|ini|env")
 	path := fs.String("path", "", "dot-separated path (e.g. service.subservice.name)")
 	if err := fs.Parse(args); err != nil {
 		return 2

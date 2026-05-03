@@ -1,6 +1,6 @@
 // Package config is the module root for go-config (import path
-// github.com/eslider/go-config). Use the subpackages [env], [yaml], [json], and
-// [ini] for format-specific codecs and the [cmd/envc] command for CLI
+// github.com/eslider/go-config). Use the subpackages [env], [yaml], [json], [toml],
+// and [ini] for format-specific codecs and the [cmd/envc] command for CLI
 // conversion.
 //
 // Hero workflow (YAML + layered dotenv + process env):
@@ -19,5 +19,6 @@
 // [env]: https://pkg.go.dev/github.com/eslider/go-config/env
 // [yaml]: https://pkg.go.dev/github.com/eslider/go-config/yaml
 // [json]: https://pkg.go.dev/github.com/eslider/go-config/json
+// [toml]: https://pkg.go.dev/github.com/eslider/go-config/toml
 // [ini]: https://pkg.go.dev/github.com/eslider/go-config/ini
 package config

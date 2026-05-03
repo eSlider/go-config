@@ -15,8 +15,8 @@ import (
 func RunMerge(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("merge", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	from := fs.String("from", "", "input format: yaml|json|ini|env")
-	to := fs.String("to", "", "output format: yaml|json|ini|env")
+	from := fs.String("from", "", "input format: yaml|json|toml|ini|env")
+	to := fs.String("to", "", "output format: yaml|json|toml|ini|env")
 	output := fs.String("output", "-", "output path or - for stdout")
 	if err := fs.Parse(args); err != nil {
 		return 2

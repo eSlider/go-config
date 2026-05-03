@@ -16,7 +16,7 @@ var (
 
 // printUsage writes the root help text to w.
 func printUsage(w io.Writer) {
-	_, _ = io.WriteString(w, `envc — convert, query, and merge configuration across env, YAML, JSON, and INI.
+	_, _ = io.WriteString(w, `envc — convert, query, and merge configuration across env, YAML, JSON, TOML, and INI.
 
 Usage:
   envc <command> [arguments]

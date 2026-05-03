@@ -11,6 +11,7 @@ import (
 	"github.com/eslider/go-config/ini"
 	"github.com/eslider/go-config/internal/bytesutil"
 	libjson "github.com/eslider/go-config/json"
+	"github.com/eslider/go-config/toml"
 	"github.com/eslider/go-config/yaml"
 	yaml3 "gopkg.in/yaml.v3"
 )
@@ -19,8 +20,8 @@ import (
 func RunConvert(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("convert", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	from := fs.String("from", "", "source format: yaml|json|ini|env")
-	to := fs.String("to", "", "target format: yaml|json|ini|env")
+	from := fs.String("from", "", "source format: yaml|json|toml|ini|env")
+	to := fs.String("to", "", "target format: yaml|json|toml|ini|env")
 	input := fs.String("input", "-", "input path, URL, or - for stdin")
 	output := fs.String("output", "-", "output path or - for stdout")
 	if err := fs.Parse(args); err != nil {
@@ -75,6 +76,8 @@ func loadMapFromBytes(ctx context.Context, format string, b []byte) (map[string]
 		return ini.New(ini.WithBytes(b)).Map(ctx)
 	case "env":
 		return env.New(env.WithBytes(b)).Map(ctx)
+	case "toml":
+		return toml.New(toml.WithBytes(b)).Map(ctx)
 	default:
 		return nil, fmt.Errorf("unknown format %q", format)
 	}
@@ -90,6 +93,8 @@ func marshalMap(format string, m map[string]any) ([]byte, error) {
 		return ini.New().Marshal(m)
 	case "env":
 		return env.New().Marshal(m)
+	case "toml":
+		return toml.New().Marshal(m)
 	default:
 		return nil, fmt.Errorf("unknown format %q", format)
 	}

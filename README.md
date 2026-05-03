@@ -8,14 +8,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/eslider/go-config)](https://goreportcard.com/report/github.com/eslider/go-config)
 [![GitHub Stars](https://img.shields.io/github/stars/eSlider/go-config?style=social)](https://github.com/eSlider/go-config/stargazers)
 
-Convert **env**, **YAML**, **JSON**, and **INI** to and from Go `map[string]any` and structs. Multi-source inputs merge with **deep map merge**: nested maps combine, **scalar leaves are last-write-wins**, and **slices** default to **replace** (opt-in **concat** via `WithSliceMerge`). Keys are normalized with a configurable **lower+alnum** rule so `sub-service`, `SUB_SERVICE`, and `SubService` line up across formats. Built on [go-viper/mapstructure/v2](https://github.com/go-viper/mapstructure).
+Convert **env**, **YAML**, **JSON**, **TOML**, and **INI** to and from Go `map[string]any` and structs. Multi-source inputs merge with **deep map merge**: nested maps combine, **scalar leaves are last-write-wins**, and **slices** default to **replace** (opt-in **concat** via `WithSliceMerge`). Keys are normalized with a configurable **lower+alnum** rule so `sub-service`, `SUB_SERVICE`, and `SubService` line up across formats. Built on [go-viper/mapstructure/v2](https://github.com/go-viper/mapstructure).
 
 ## Architecture
 
 ```mermaid
 flowchart TB
   Sources["Sources\nbytes reader file URL process env"]
-  Parser["Parser\ngodotenv yaml ini json"]
+  Parser["Parser\ngodotenv yaml json toml ini"]
   Norm["keymap.Walk\nNormalizer"]
   MergeOp["merge.DeepMerge"]
   Map["map string any"]
@@ -88,8 +88,8 @@ os.WriteFile("out.json", b, 0o644)
 ## CLI: `envc`
 
 Install the binary from [**Install**](#install) (`go install …/cmd/envc@latest`). Every
-subcommand uses **`--from`** and **`--to`** with one of **`yaml`**, **`json`**, **`ini`**,
-**`env`**. Snippets use **`bash`** so you can copy-paste; replace paths and URLs with yours.
+subcommand uses **`--from`** and **`--to`** with one of **`yaml`**, **`json`**, **`toml`**,
+**`ini`**, **`env`**. Snippets use **`bash`** so you can copy-paste; replace paths and URLs with yours.
 
 ### Help and version
 
@@ -120,6 +120,9 @@ envc convert --from json --to yaml --input ./settings.json --output ./settings.y
 
 # Windows-style INI → JSON for a one-off jq filter
 envc convert --from ini --to json --input ./odbc.ini --output ./odbc.json
+
+# TOML (e.g. app / tool config) → YAML for a stack that only reads YAML
+envc convert --from toml --to yaml --input ./config.toml --output ./config.yaml
 
 # Remote YAML → materialize .env for `docker compose --env-file` or similar
 envc convert --from yaml --to env \
@@ -186,6 +189,11 @@ set -a
 source <(envc convert --from ini --to env --input ./legacy.ini)
 set +a
 
+# TOML tool manifest or stack file → env in the shell
+set -a
+source <(envc convert --from toml --to env --input ./stack.toml)
+set +a
+
 # Inline YAML here-doc → env → source (CI or local; no intermediate file)
 set -a
 source <(cat <<'YAML' | envc convert --from yaml --to env
@@ -213,7 +221,7 @@ envc convert --from json --to yaml \
   --output ./snapshot.yaml
 ```
 
-## API (all codecs)
+## API (format codecs)
 
 | Method                                          | Description                       |
 | ----------------------------------------------- | --------------------------------- |
@@ -233,6 +241,8 @@ Shared options (each subpackage): `WithBytes`, `WithReader`, `WithFile`, `WithUR
 | `Service.SubService.Name` | `service.sub-service.name` | `SERVICE_SUBSERVICE_NAME` |
 
 INI uses dotted sections, e.g. `[service.subservice]` with `name=...`.
+
+TOML uses explicit tables, e.g. `[service]`, `[service.subservice]`, with `name = "..."`.
 
 ## Related libraries
 

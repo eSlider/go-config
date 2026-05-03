@@ -4,11 +4,11 @@ This module is part of the eSlider `go-*` library standard (inventar ASR-0008).
 
 ## Purpose
 
-Convert **env**, **YAML**, **JSON**, and **INI** into nested `map[string]any` and Go structs (and back), with multi-source merging and the `envc` CLI.
+Convert **env**, **YAML**, **JSON**, **TOML**, and **INI** into nested `map[string]any` and Go structs (and back), with multi-source merging and the `envc` CLI.
 
 ## Public API surface
 
-- Subpackages: `env`, `yaml`, `json`, `ini` — each exports `New`, `(*Codec).Map`, `Unmarshal`, `UnmarshalContext`, `Marshal`, `WriteTo`, and format-specific options.
+- Subpackages: `env`, `yaml`, `json`, `toml`, `ini` — each exports `New`, `(*Codec).Map`, `Unmarshal`, `UnmarshalContext`, `Marshal`, `WriteTo`, and format-specific options.
 - `cmd/envc` — binary `envc`: `convert`, `get`, `merge`.
 - Internals under `internal/` are not stable API.
 
