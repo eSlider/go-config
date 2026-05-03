@@ -87,99 +87,131 @@ os.WriteFile("out.json", b, 0o644)
 
 ## CLI: `envc`
 
-Formats for `--from` / `--to`: `yaml`, `json`, `ini`, `env`. Run `envc help` or
-`envc <command> -h` for flags.
-
-| Command                                                            | Purpose                                                         |
-| ------------------------------------------------------------------ | --------------------------------------------------------------- |
-| `envc convert --from yaml --to env --input - --output -`           | Convert stdin YAML to dotenv on stdout                          |
-| `envc get --from yaml --path service.name config.yaml`             | Print one path (dot segments map to lower+alnum keys)         |
-| `envc merge --from yaml --to json --output out.json a.yaml b.yaml` | Deep-merge multiple YAML files, emit JSON                       |
+Install the binary from [**Install**](#install) (`go install …/cmd/envc@latest`). Every
+subcommand uses **`--from`** and **`--to`** with one of **`yaml`**, **`json`**, **`ini`**,
+**`env`**. Snippets use **`bash`** so you can copy-paste; replace paths and URLs with yours.
 
 ### Help and version
 
-```sh
+```bash
+# Root usage (commands, short descriptions)
 envc help
+
+# Per-command flag reference (convert, merge, get)
+envc convert -h
+envc merge -h
+envc get -h
+
+# Version string, git commit, build date (release builds embed the tag; local go install → dev)
 envc version
 ```
 
-### `convert` examples
+### `convert`
 
-```sh
-# Pipe YAML in, JSON on stdout (default --input - and --output -)
-printf 'app:\n  port: 8080\n' | envc convert --from yaml --to json
+One input → normalize keys → one output. Defaults: **`--input -`**, **`--output -`**
+(stdin / stdout).
 
-# File → file
-envc convert --from json --to yaml --input settings.json --output settings.yaml
+```bash
+# Helm-style values file → JSON on the terminal (redirect to a file if you prefer)
+envc convert --from yaml --to json --input ./values.yaml --output -
 
-# Remote YAML → local dotenv
+# Teammate’s JSON app settings → YAML for a repo that only accepts YAML
+envc convert --from json --to yaml --input ./settings.json --output ./settings.yaml
+
+# Windows-style INI → JSON for a one-off jq filter
+envc convert --from ini --to json --input ./odbc.ini --output ./odbc.json
+
+# Remote YAML → materialize .env for `docker compose --env-file` or similar
 envc convert --from yaml --to env \
-  --input https://example.com/config.yaml \
-  --output .env.generated
+  --input "https://raw.githubusercontent.com/org/stack/main/config.yaml" \
+  --output ./.env.generated
+
+# Tiny inline document → JSON (stdin is the pipe; same idea as --input -)
+printf 'service:\n  name: api\n  port: 8443\n' | envc convert --from yaml --to json
 ```
 
-### Apply YAML or INI to the **current** bash session
+### `merge`
 
-`envc convert … --to env` prints **dotenv-style** lines (`KEY=value`). They are normal
-shell assignments, not `export` lines, so use **`set -a`** (allexport) if child processes
-must see the variables. **Process substitution** `<(…)` needs **bash** (not plain `sh`).
+Several inputs in order: **nested maps combine**, **scalar leaves last-write-wins**, slices
+default to **replace**. Optional **`--output -`** (stdout).
 
 ```bash
-# YAML → current shell (and export to children while sourcing)
-set -a
-source <(envc convert --from yaml --to env --input config.yaml)
-set +a
+# Docker Compose: base + override → single JSON for another tool in the pipeline
+envc merge --from yaml --to json \
+  ./docker-compose.base.yaml \
+  ./docker-compose.override.yaml
 
-# INI → current shell
-set -a
-source <(envc convert --from ini --to env --input app.ini)
-set +a
+# App config: shipped defaults, local overrides, generated secrets → one merged YAML artifact
+envc merge --from yaml --to yaml \
+  --output ./config.merged.yaml \
+  ./config.defaults.yaml \
+  ./config.local.yaml \
+  ./config.secrets.yaml
+
+# Hotfix on stdin, then merge with on-disk YAML (--from must match every input, including stdin)
+cat ./patch-canary.yaml | envc merge --from yaml --to json - ./config.base.yaml ./config.prod.yaml
 ```
 
-Same idea from stdin:
+### `get`
+
+Print **one** scalar or JSON-encoded value. **`--path`** is dot-separated; each segment uses
+the same **lower+alnum** rules as the library (`sub-service` / `SubService` → `subservice`).
+Paths follow **maps only** (YAML lists are not walked by index here).
 
 ```bash
+# Image line from docker-compose (good for scripts: stdout is just the value)
+envc get --from yaml --path services.api.image ./docker-compose.yaml
+
+# Nested string from an application config on disk
+envc get --from yaml --path database.url ./config/app.yaml
+
+# Same lookup, but YAML arrives from curl (positional "-" = read stdin to EOF)
+curl -fsSL https://config.example.com/app.yaml | envc get --from yaml --path database.url -
+```
+
+### Load YAML or INI into the current shell
+
+**`--to env`** emits **`KEY=value`** (shell assignments, not `export`). Use **`set -a`**
+(allexport) so child processes inherit variables while you **`source`**. **`source <(…)`**
+requires **bash**. Only use with **trusted** input (same risk as any `source`).
+
+```bash
+# Stack defaults from YAML into the current shell session
 set -a
-source <(cat deploy.yaml | envc convert --from yaml --to env)
+source <(envc convert --from yaml --to env --input ./.env.defaults.yaml)
+set +a
+
+# Legacy INI (e.g. PHP) → env-style assignments in the shell
+set -a
+source <(envc convert --from ini --to env --input ./legacy.ini)
+set +a
+
+# Inline YAML here-doc → env → source (CI or local; no intermediate file)
+set -a
+source <(cat <<'YAML' | envc convert --from yaml --to env
+app:
+  env: staging
+  region: eu-west-1
+YAML
+)
 set +a
 ```
 
-Only do this with **trusted** config files (same caution as `source` on any generated
-script): values are expanded by the shell when you `source` them.
+### Stdin, URLs, and EOF
 
-### `get` examples
+```bash
+# Explicit stdin redirect (reads until EOF)
+envc convert --from yaml --to json --input - --output - <./service.yaml
 
-Path segments use the same **lower+alnum** rules as the library (e.g. `sub-service`
-and `SubService` both address `subservice`).
+# Default is stdin/stdout — safe when stdin is a pipe or file; on an interactive TTY with no
+# pipe, the process waits for Ctrl-D, which looks like a "hang". Prefer --input path/URL in scripts.
+printf 'k: v\n' | envc convert --from yaml --to json
 
-```sh
-# Value from a file
-envc get --from yaml --path app.port config.yaml
-
-# Nested key; stdin when the last argument is `-` or omitted with a pipe
-cat config.yaml | envc get --from yaml --path service.subservice.name -
+# HTTPS GET with client timeout; full body is read into memory before convert
+envc convert --from json --to yaml \
+  --input "https://api.example.com/v1/config.json" \
+  --output ./snapshot.yaml
 ```
-
-### `merge` examples
-
-Sources are merged **in order** (later files override scalar leaves; maps recurse).
-Use `-` once to read **one** merged stdin blob as a source (same format as the others).
-
-```sh
-envc merge --from yaml --to json defaults.yaml overrides.yaml
-
-# Write merged JSON to stdout, then save
-envc merge --from yaml --to json base.yaml local.yaml | tee merged.json
-
-# Stdin plus files: first load stdin as YAML, then merge each file
-cat patch.yaml | envc merge --from yaml --to yaml - base.yaml
-```
-
-### Stdin and `-`
-
-With `--input -` (convert) or `-` as the get/merge input, `envc` reads **until EOF**.
-From an interactive terminal with no pipe, that waits until you press **Ctrl-D**
-(end of input). Prefer `--input path` or a URL when scripting.
 
 ## API (all codecs)
 
@@ -212,13 +244,9 @@ INI uses dotted sections, e.g. `[service.subservice]` with `name=...`.
 
 ## Contributing
 
-Testing expectations, local commands, commit message conventions, and how **release-please**
-and **GoReleaser** publish tags and `envc` binaries are documented in
-**[CONTRIBUTING.md](CONTRIBUTING.md)**.
-
-## Decisions
-
-Repo-local ASRs: [docs/asr/README.md](docs/asr/README.md).
+Testing expectations, local commands, commit message conventions, how **release-please**
+and **GoReleaser** publish tags and `envc` binaries, and **architecture decisions** (repo
+ASRs) are documented in **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ## License
 

@@ -17,12 +17,9 @@ Breaking changes require a new major SemVer tag (or `/v2` module path if the pol
 ## Testing policy, PR checklist, and releases
 
 Human-oriented detail lives in **[CONTRIBUTING.md](CONTRIBUTING.md)** (testing rules,
-`go test` / lint commands, Conventional Commits, and the release-please / GoReleaser flow).
-Follow that document for any change that will ship in a versioned release.
-
-## Decisions
-
-Architecture Significant Requirements: [docs/asr/README.md](docs/asr/README.md).
+`go test` / lint commands, Conventional Commits, the release-please / GoReleaser flow, and
+**architecture decisions** / repo ASRs). Follow that document for any change that will ship
+in a versioned release.
 
 ## Related
 

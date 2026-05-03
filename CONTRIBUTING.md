@@ -60,5 +60,9 @@ Local `go install` builds of `envc` report `dev` for `envc version` unless you p
 
 ## Architecture decisions
 
-Repo-local ASRs: [docs/asr/README.md](docs/asr/README.md). Broader eSlider Go module
-conventions: `inventar/docs/asr/ASR-0008.md` (see [AGENTS.md](AGENTS.md) — Related).
+Significant design choices for this repository are captured as **Architecture Significant
+Requirements** (ASRs):
+
+- **Repo-local ASRs:** [docs/asr/README.md](docs/asr/README.md)
+- **eSlider Go library conventions (inventar):** `inventar/docs/asr/ASR-0008.md` — also linked
+  from [AGENTS.md](AGENTS.md) under Related.
