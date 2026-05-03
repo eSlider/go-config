@@ -4,6 +4,20 @@ All notable changes to `go-config` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/eSlider/go-config/compare/v0.2.2...v0.3.0) (2026-05-03)
+
+
+### Features
+
+* add TOML codec and envc format support ([474cd88](https://github.com/eSlider/go-config/commit/474cd88739bd778327ba20795fbd297faaa8befa))
+* **envc:** improve root help and add stdin hang repro script ([2d674de](https://github.com/eSlider/go-config/commit/2d674de546c8ef0eca231a74de33f827411aed72))
+
+
+### Documentation
+
+* add CONTRIBUTING guide and expand README ([36f0ed9](https://github.com/eSlider/go-config/commit/36f0ed9b5250910884f22edadb3081b03217356d))
+* refactor envc README and centralize decisions ([2d7b97f](https://github.com/eSlider/go-config/commit/2d7b97f5aed2faf52016488b4bbf8d2cf2f515cf))
+
 ## [0.2.2](https://github.com/eSlider/go-config/compare/v0.2.1...v0.2.2) (2026-05-02)
 
 
