@@ -18,15 +18,26 @@ type Option func(*Codec)
 // WithCurrentEnvironment appends the process environment as a source (read at Map time).
 func WithCurrentEnvironment() Option {
 	return func(c *Codec) {
-		c.layers = append(c.layers, func(_ context.Context) (map[string]string, error) {
-			return flatFromEnviron(os.Environ()), nil
+		c.layers = append(c.layers, loadedLayer{
+			load: func(_ context.Context) (map[string]string, error) {
+				return flatFromEnviron(os.Environ()), nil
+			},
 		})
 	}
 }
 
 // WithFile appends a dotenv file path as a source.
-func WithFile(path string) Option {
-	return withSource(source.File{Path: path}, path)
+// Optional jqPath selects only that subtree before merging (jq-style path, e.g. ".service"):
+// only the object at that path is merged into the config at the same path (its fields,
+// not a scalar binding for the whole branch). Keys outside that path in the file are
+// ignored. A redundant single-key wrapper repeating the path leaf (e.g. service.service.*)
+// is flattened so fields merge directly under service.
+func WithFile(path string, jqPath ...string) Option {
+	jp := ""
+	if len(jqPath) > 0 {
+		jp = jqPath[0]
+	}
+	return withSourceAtJQ(source.File{Path: path}, path, jp)
 }
 
 // WithBytes appends raw dotenv bytes as a source.
@@ -77,7 +88,7 @@ func WithKeyNormalizer(n keymap.Normalizer) Option {
 	return func(c *Codec) { c.normalizer = n }
 }
 
-// WithSliceMerge sets slice merge strategy when merging sources.
+// WithSliceMerge sets a slice merge strategy when merging sources.
 func WithSliceMerge(s merge.SliceStrategy) Option {
 	return func(c *Codec) { c.sliceStrat = s }
 }

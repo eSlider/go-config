@@ -17,6 +17,20 @@ type motivationConfig struct {
 	Database struct {
 		URL string `mapstructure:"url"`
 	} `mapstructure:"database"`
+
+	Service struct {
+		Database struct {
+			Poolsize string `json:"poolsize"`
+			Url      string `json:"url"`
+		} `json:"database"`
+		Name       string `json:"name"`
+		Subservice struct {
+			Enabled string `json:"enabled"`
+			Key     string `json:"key"`
+			Name    string `json:"name"`
+			Timeout string `json:"timeout"`
+		} `json:"subservice"`
+	} `json:"service"`
 }
 
 func TestMotivationConfig_YAMLThenEnvThenProcessEnv(t *testing.T) {
@@ -37,6 +51,7 @@ database:
 HTTP_LISTEN=:9090
 DATABASE_URL=postgres://dotenv
 `)),
+		env.WithFile("fixtures/identity/service.env", ".service"),
 		env.WithCurrentEnvironment(),
 	)
 
@@ -49,14 +64,20 @@ DATABASE_URL=postgres://dotenv
 		t.Fatalf("env marshal returned nil map")
 	}
 
-	// convert m to json and back to map
 	js, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		t.Fatalf("json marshal: %v", err)
 	}
-	m2 := make(map[string]interface{})
-	if err := json.Unmarshal(js, &m2); err != nil {
+	var roundTrip map[string]interface{}
+	if err := json.Unmarshal(js, &roundTrip); err != nil {
 		t.Fatalf("json unmarshal: %v", err)
+	}
+	svc, ok := roundTrip["service"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected service in merged map, got %s", string(js))
+	}
+	if svc["name"] != "my-service" {
+		t.Fatalf("service.name=%v", svc["name"])
 	}
 
 	var cfg motivationConfig
@@ -75,5 +96,17 @@ DATABASE_URL=postgres://dotenv
 	}
 	if cfg.Database.URL != "postgres://process-env" {
 		t.Fatalf("Database.URL=%q", cfg.Database.URL)
+	}
+	if cfg.Service.Name != "my-service" {
+		t.Fatalf("Service.Name=%q", cfg.Service.Name)
+	}
+	if cfg.Service.Database.Url != "postgres://localhost:5432/db" {
+		t.Fatalf("Service.Database.Url=%q", cfg.Service.Database.Url)
+	}
+	if cfg.Service.Database.Poolsize != "10" {
+		t.Fatalf("Service.Database.Poolsize=%q", cfg.Service.Database.Poolsize)
+	}
+	if cfg.Service.Subservice.Name != "abc" {
+		t.Fatalf("Service.Subservice.Name=%q", cfg.Service.Subservice.Name)
 	}
 }

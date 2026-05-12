@@ -17,9 +17,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type loadedLayer struct {
+	load   func(context.Context) (map[string]string, error)
+	jqPath string // empty: merge full nested tree; e.g. ".service" merges only that subtree
+}
+
 // Codec loads environment-style key/value data from multiple sources.
 type Codec struct {
-	layers     []func(context.Context) (map[string]string, error)
+	layers     []loadedLayer
 	prefix     string
 	normalizer keymap.Normalizer
 	sliceStrat merge.SliceStrategy
@@ -55,11 +60,15 @@ func (c *Codec) Map(ctx context.Context) (map[string]any, error) {
 	}
 	acc := make(map[string]any)
 	for _, layer := range c.layers {
-		flat, err := layer(ctx)
+		flat, err := layer.load(ctx)
 		if err != nil {
 			return nil, err
 		}
 		nested := nestedFromFlat(flat, c.prefix)
+		if segs := splitJQPath(layer.jqPath); len(segs) > 0 {
+			sub := nestedUnderJQPath(nested, layer.jqPath)
+			nested = buildNestedTreeAtPath(segs, sub)
+		}
 		merge.DeepMerge(acc, nested, c.mergeOpts...)
 	}
 	if c.normalizer != nil {
@@ -156,17 +165,24 @@ func flatFromEnviron(environ []string) map[string]string {
 }
 
 func withSource(s source.Source, label string) func(*Codec) {
+	return withSourceAtJQ(s, label, "")
+}
+
+func withSourceAtJQ(s source.Source, label, jqPath string) func(*Codec) {
 	return func(c *Codec) {
-		c.layers = append(c.layers, func(ctx context.Context) (map[string]string, error) {
-			b, err := bytesutil.ReadAll(ctx, s)
-			if err != nil {
-				return nil, fmt.Errorf("env: read %s: %w", label, err)
-			}
-			m, err := godotenv.UnmarshalBytes(b)
-			if err != nil {
-				return nil, fmt.Errorf("env: parse %s: %w", label, err)
-			}
-			return m, nil
+		c.layers = append(c.layers, loadedLayer{
+			jqPath: jqPath,
+			load: func(ctx context.Context) (map[string]string, error) {
+				b, err := bytesutil.ReadAll(ctx, s)
+				if err != nil {
+					return nil, fmt.Errorf("env: read %s: %w", label, err)
+				}
+				m, err := godotenv.UnmarshalBytes(b)
+				if err != nil {
+					return nil, fmt.Errorf("env: parse %s: %w", label, err)
+				}
+				return m, nil
+			},
 		})
 	}
 }
