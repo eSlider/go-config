@@ -22,7 +22,7 @@ func RunConvert(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	from := fs.String("from", "", "source format: yaml|json|toml|ini|env")
 	to := fs.String("to", "", "target format: yaml|json|toml|ini|env")
-	input := fs.String("input", "-", "input path, URL, or - for stdin")
+	input := fs.String("input", "-", "input path, URL, - for stdin, or \"environ\" for current process env (requires --from env)")
 	output := fs.String("output", "-", "output path or - for stdout")
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -32,16 +32,31 @@ func RunConvert(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 2
 	}
 	ctx := context.Background()
-	src := openSource(*input, stdin)
-	b, err := bytesutil.ReadAll(ctx, src)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "convert: read: %v\n", err)
-		return 1
-	}
-	m, err := loadMapFromBytes(ctx, *from, b)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "convert: parse: %v\n", err)
-		return 1
+	var m map[string]any
+	var err error
+	if *input == "environ" {
+		if *from != "env" {
+			_, _ = fmt.Fprintln(stderr, "convert: --input environ only works with --from env")
+			return 2
+		}
+		m, err = env.New(env.WithCurrentEnvironment()).Map(ctx)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "convert: environ: %v\n", err)
+			return 1
+		}
+	} else {
+		src := openSource(*input, stdin)
+		var b []byte
+		b, err = bytesutil.ReadAll(ctx, src)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "convert: read: %v\n", err)
+			return 1
+		}
+		m, err = loadMapFromBytes(ctx, *from, b)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "convert: parse: %v\n", err)
+			return 1
+		}
 	}
 	outb, err := marshalMap(*to, m)
 	if err != nil {

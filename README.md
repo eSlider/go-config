@@ -85,6 +85,24 @@ b, _ := json.New().Marshal(m)
 os.WriteFile("out.json", b, 0o644)
 ```
 
+### 4. Current process environment → YAML (library)
+
+```go
+ctx := context.Background()
+m, err := env.New(env.WithCurrentEnvironment()).Map(ctx)
+if err != nil {
+	return err
+}
+b, err := yaml.New().Marshal(m)
+if err != nil {
+	return err
+}
+_, _ = os.Stdout.Write(b)
+```
+
+Same map as `envc convert --from env --to yaml --input environ` (nested keys come from
+splitting `VAR_NAME` on `_`, then **lower+alnum** normalization).
+
 ## CLI: `envc`
 
 Install the binary from [**Install**](#install) (`go install …/cmd/envc@latest`). Every
@@ -109,7 +127,16 @@ envc version
 ### `convert`
 
 One input → normalize keys → one output. Defaults: **`--input -`**, **`--output -`**
-(stdin / stdout).
+(stdin / stdout). Use **`--input environ`** with **`--from env`** to read **`os.Environ()`**
+(snapshot at run time), then emit **`--to`** (YAML, JSON, etc.) on stdout—no stdin.
+
+```bash
+# Current process environment → nested YAML on stdout (may include secrets; mask before sharing)
+envc convert --from env --to yaml --input environ --output -
+
+# Same snapshot as minified JSON
+envc convert --from env --to json --input environ
+```
 
 ```bash
 # Helm-style values file → JSON on the terminal (redirect to a file if you prefer)
@@ -208,6 +235,9 @@ set +a
 ### Stdin, URLs, and EOF
 
 ```bash
+# Process environment (not stdin): use --input environ with --from env (see `convert` above)
+envc convert --from env --to yaml --input environ
+
 # Explicit stdin redirect (reads until EOF)
 envc convert --from yaml --to json --input - --output - <./service.yaml
 

@@ -8,6 +8,33 @@ import (
 	"testing"
 )
 
+func TestRunConvert_EnvironToYAML(t *testing.T) {
+	t.Setenv("ENVC_TEST_PUBLISH", "xyzzy")
+	var stdout, stderr bytes.Buffer
+	code := RunConvert([]string{
+		"--from", "env", "--to", "yaml",
+		"--input", "environ", "--output", "-",
+	}, strings.NewReader(""), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stderr: %s", stderr.String())
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "xyzzy") {
+		t.Fatalf("expected value in yaml out: %s", out)
+	}
+}
+
+func TestRuknConvert_EnvironRequiresFromEnv(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := RunConvert([]string{
+		"--from", "yaml", "--to", "json",
+		"--input", "environ", "--output", "-",
+	}, strings.NewReader(""), &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("expected exit 2, got %d stderr=%s", code, stderr.String())
+	}
+}
+
 func TestRunConvert_TOMLToJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("[app]\nport = 8080\n")
