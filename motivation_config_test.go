@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/eslider/go-config/env"
@@ -37,6 +39,25 @@ DATABASE_URL=postgres://dotenv
 `)),
 		env.WithCurrentEnvironment(),
 	)
+
+	ctx := context.Background()
+	m, err := envCfg.Map(ctx)
+	if err != nil {
+		t.Fatalf("env marshal: %v", err)
+	}
+	if m == nil {
+		t.Fatalf("env marshal returned nil map")
+	}
+
+	// convert m to json and back to map
+	js, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		t.Fatalf("json marshal: %v", err)
+	}
+	m2 := make(map[string]interface{})
+	if err := json.Unmarshal(js, &m2); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
 
 	var cfg motivationConfig
 	if err := yamlCfg.Unmarshal(&cfg); err != nil {

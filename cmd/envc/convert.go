@@ -34,6 +34,7 @@ func RunConvert(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	ctx := context.Background()
 	var m map[string]any
 	var err error
+
 	if *input == "environ" {
 		if *from != "env" {
 			_, _ = fmt.Fprintln(stderr, "convert: --input environ only works with --from env")
