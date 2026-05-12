@@ -4,6 +4,19 @@ All notable changes to `go-config` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/eSlider/go-config/compare/v0.3.0...v0.4.0) (2026-05-12)
+
+
+### Features
+
+* **env:** add `nestedUnderJQPath` for extracting nested subtrees by jq-style paths ([719fccf](https://github.com/eSlider/go-config/commit/719fccf7128763c79ef7bc936318a72626578d01))
+* **envc:** add support for converting current process environment to YAML ([b7709d6](https://github.com/eSlider/go-config/commit/b7709d693bbd23e9ac6c33035bab5492bf238eda))
+
+
+### Bug Fixes
+
+* **test:** rename Url field to URL to satisfy revive var-naming ([c06f7f2](https://github.com/eSlider/go-config/commit/c06f7f2bc96a3660478c100e6229ca49ef86f227))
+
 ## [0.3.0](https://github.com/eSlider/go-config/compare/v0.2.2...v0.3.0) (2026-05-03)
 
 
