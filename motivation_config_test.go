@@ -21,7 +21,7 @@ type motivationConfig struct {
 	Service struct {
 		Database struct {
 			Poolsize string `json:"poolsize"`
-			Url      string `json:"url"`
+			URL      string `json:"url"`
 		} `json:"database"`
 		Name       string `json:"name"`
 		Subservice struct {
@@ -100,8 +100,8 @@ DATABASE_URL=postgres://dotenv
 	if cfg.Service.Name != "my-service" {
 		t.Fatalf("Service.Name=%q", cfg.Service.Name)
 	}
-	if cfg.Service.Database.Url != "postgres://localhost:5432/db" {
-		t.Fatalf("Service.Database.Url=%q", cfg.Service.Database.Url)
+	if cfg.Service.Database.URL != "postgres://localhost:5432/db" {
+		t.Fatalf("Service.Database.URL=%q", cfg.Service.Database.URL)
 	}
 	if cfg.Service.Database.Poolsize != "10" {
 		t.Fatalf("Service.Database.Poolsize=%q", cfg.Service.Database.Poolsize)
