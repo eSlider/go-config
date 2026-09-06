@@ -4,6 +4,18 @@ All notable changes to `go-config` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/eSlider/go-config/compare/v0.4.0...v0.5.0) (2026-09-06)
+
+
+### Features
+
+* **security:** secret-scan via gitleaks in CI + pre-push/pre-commit hooks ([#142](https://github.com/eSlider/go-config/issues/142)) ([78076ee](https://github.com/eSlider/go-config/commit/78076ee5a9eb5a33c1575569e50751759b121e03))
+
+
+### Documentation
+
+* **funding:** eSlider support links (reverse-import GitHub 21096c6) ([d0a9cc3](https://github.com/eSlider/go-config/commit/d0a9cc3b36b1564a7554688b45f718187d456282))
+
 ## [0.4.0](https://github.com/eSlider/go-config/compare/v0.3.0...v0.4.0) (2026-05-12)
 
 
